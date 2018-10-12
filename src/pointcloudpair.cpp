@@ -254,6 +254,39 @@ void PointCloudPair::BuildPointMatchGraphEdges()
               << ", # negative edges = " << num_neg_edges << "\n";
 }
 
+void PointCloudPair::BuildPointMatchGraphEdges(std::vector<std::pair<size_t, size_t> > &positive_edge,\
+  std::vector<std::pair<size_t, size_t> > &negative_edge)
+{
+    auto it = positive_edge.begin();
+    for (; it != positive_edge.end(); it++)
+    {
+      size_t point_index1 = it->first;
+      size_t point_index2 = it->second;
+      if (!match_graph_.edgeExist(point_index1, point_index2))
+      {
+        PointMatchEdge edge(point_index1, point_index2, true);
+        match_graph_.addEdge(point_index1, point_index2, edge);
+      }
+    }
+    size_t num_pos_edges = match_graph_.edgeNum();
+
+    auto it = negative_edge.begin();
+    for (; it != negative_edge.end(); it++)
+    {
+      size_t point_index1 = it->first;
+      size_t point_index2 = it->second;
+      if (!match_graph_.edgeExist(point_index1, point_index2))
+      {
+        PointMatchEdge edge(point_index1, point_index2, false);
+        match_graph_.addEdge(point_index1, point_index2, edge);
+      }
+    }
+    size_t num_neg_edges = match_graph_.edgeNum() - num_pos_edges;
+    std::cout << "Match graph is built: # nodes = " << match_graph_.nodeNum()
+              << ", # positive edges = " << num_pos_edges << "\n"
+              << ", # negative edges = " << num_neg_edges << "\n";
+}
+
 void PointCloudPair::InitMessage(std::tr1::unordered_map<size_t, V2d> & measurement_message_map,
                                  std::tr1::unordered_map< std::pair<size_t, size_t>, V2d> & message_map)
 {
@@ -509,8 +542,12 @@ bool PointCloudPair::BeliefPropagation(std::vector<std::pair<size_t, size_t> > &
     return true;
 }
 
-bool PointCloudPair::BeliefPropagation_withPredefinedGraph(std::vector<std::pair<size_t, size_t> > & match_pairs)
+bool PointCloudPair::BeliefPropagation_withPredefinedGraph(std::vector<std::pair<size_t, size_t> > &positive_edge,\
+  std::vector<std::pair<size_t, size_t> > &negative_edge,\
+  std::vector<std::pair<size_t, size_t> > & match_pairs)
 {
+    BuildPointMatchGraphEdges(positive_edge, negative_edge);
+
     std::tr1::unordered_map<size_t, V2d> measurement_message_map;
     std::tr1::unordered_map< std::pair<size_t, size_t>, V2d> message_map;
     std::tr1::unordered_map<size_t, V2d> belief;

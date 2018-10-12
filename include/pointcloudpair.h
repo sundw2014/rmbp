@@ -51,7 +51,9 @@ public:
     inline void SetBeliefThreshold(double threshold) { bp_param_.belief_threshold = threshold; }
     inline void SetMaxIteration(size_t max_iteration) { bp_param_.max_iteration = max_iteration; }
     bool BeliefPropagation(std::vector<std::pair<size_t, size_t> > & refine_match_pairs);
-    bool BeliefPropagation_withPredefinedGraph(std::vector<std::pair<size_t, size_t> > & refine_match_pairs);
+    bool BeliefPropagation_withPredefinedGraph(std::vector<std::pair<size_t, size_t> > &positive_edge,\
+      std::vector<std::pair<size_t, size_t> > &negative_edge,\
+      std::vector<std::pair<size_t, size_t> > & match_pairs);
 
 private:
     bool LoadMatches(std::vector<std::pair<size_t, size_t> > const & match_pairs,
@@ -63,6 +65,8 @@ private:
     void GetSpatialNeighbMatches(std::tr1::unordered_map<size_t, std::vector<size_t> > & positive_match_map,
                                  std::tr1::unordered_map<size_t, std::vector<size_t> > & negative_match_map);
     void BuildPointMatchGraphEdges();
+    void BuildPointMatchGraphEdges(std::vector<std::pair<size_t, size_t> > &positive_edge,\
+      std::vector<std::pair<size_t, size_t> > &negative_edge);
     void InitMessage(std::tr1::unordered_map<size_t, V2d> & measurement_message_map,
                      std::tr1::unordered_map< std::pair<size_t, size_t>, V2d> & message_map);
     void InitBelief(std::tr1::unordered_map<size_t, V2d> & belief);
