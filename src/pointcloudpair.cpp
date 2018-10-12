@@ -22,6 +22,15 @@ PointCloudPair::PointCloudPair(std::tr1::unordered_map<size_t, V3d> const & coor
     LoadMatches(match_pairs, init_inlier_prob);
 }
 
+PointCloudPair::PointCloudPair(size_t N)
+{
+    init_inlier_prob_.resize(N, 0.5);
+    for(size_t i=0; i<N; ++i)
+    {
+      match_graph_.addNode(i, PointMatchNode(i, i, init_inlier_prob_[i]));
+    }
+}
+
 PointCloudPair::~PointCloudPair() {}
 
 bool PointCloudPair::LoadMatches(std::vector<std::pair<size_t, size_t> > const & match_pairs,
@@ -152,10 +161,13 @@ void PointCloudPair::GetSpatialNeighbMatches(std::tr1::unordered_map<size_t, std
         std::set_intersection(id1_neighb_pair_set.begin(), id1_neighb_pair_set.end(),
                               id2_neighb_set.begin(), id2_neighb_set.end(),
                               std::back_inserter(mutual_id2_neighbs));
+        // 上面操作完了之后id1_neighb_pair_set和id2_neighb_set是这两个点云当前index的k近邻
         for (int i = 0; i < mutual_id2_neighbs.size(); i++)
         {
             size_t id2_neighb = mutual_id2_neighbs[i];
             size_t id1_neighb = point2point2_[id2_neighb];
+            // point2point2_和point2point1_里面都是顺序排列的数字
+            // 所以上面这两句id1_neighb = id2_neighb, positive_match里面存储的是pc1和pc2当前点的近邻重合的部分
             positive_match_pairs.push_back(id1_neighb);
         }
 
@@ -497,6 +509,40 @@ bool PointCloudPair::BeliefPropagation(std::vector<std::pair<size_t, size_t> > &
     return true;
 }
 
+bool PointCloudPair::BeliefPropagation_withPredefinedGraph(std::vector<std::pair<size_t, size_t> > & match_pairs)
+{
+    std::tr1::unordered_map<size_t, V2d> measurement_message_map;
+    std::tr1::unordered_map< std::pair<size_t, size_t>, V2d> message_map;
+    std::tr1::unordered_map<size_t, V2d> belief;
+
+    InitMessage(measurement_message_map, message_map);
+    InitBelief(belief);
+    InitCompatibilityMatrix();
+
+    for (size_t idx = 0; idx < bp_param_.max_iteration; idx++)
+    {
+        std::cout << "*********************** iteration " << idx << " ***********************\n";
+        std::tr1::unordered_map< std::pair<size_t, size_t>, V2d> last_message_map = message_map;
+
+        if (!UpdateMessage(measurement_message_map, last_message_map, message_map))
+        {
+            return false;
+        }
+
+        std::tr1::unordered_map<size_t, V2d> last_belief = belief;
+        ComputeBelief(measurement_message_map, message_map, belief);
+        if (StopCondition(last_belief, belief))
+        {
+            break;
+        }
+    }
+
+    match_pairs.clear();
+    RefineMatchPairs(belief, match_pairs);
+
+    return true;
+}
+
 bool RMBP(std::tr1::unordered_map<size_t, V3d> const & coords1,
           std::tr1::unordered_map<size_t, V3d> const & coords2,
           std::vector<std::pair<size_t, size_t> > const & match_pairs,
@@ -516,6 +562,3 @@ bool RMBP(std::tr1::unordered_map<size_t, V3d> const & coords1,
 
     return true;
 }
-
-
-

@@ -40,6 +40,7 @@ public:
                    std::tr1::unordered_map<size_t, V3d> const & coords2,
                    std::vector<std::pair<size_t, size_t> > const & match_pairs,
                    std::vector<double> const & init_inlier_prob);
+    PointCloudPair(size_t N);
 
     ~PointCloudPair();
 
@@ -50,6 +51,7 @@ public:
     inline void SetBeliefThreshold(double threshold) { bp_param_.belief_threshold = threshold; }
     inline void SetMaxIteration(size_t max_iteration) { bp_param_.max_iteration = max_iteration; }
     bool BeliefPropagation(std::vector<std::pair<size_t, size_t> > & refine_match_pairs);
+    bool BeliefPropagation_withPredefinedGraph(std::vector<std::pair<size_t, size_t> > & refine_match_pairs);
 
 private:
     bool LoadMatches(std::vector<std::pair<size_t, size_t> > const & match_pairs,
